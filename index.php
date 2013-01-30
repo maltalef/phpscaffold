@@ -5,12 +5,24 @@ include 'lib/functions.inc';
 
 $did_scaffold = false;
 
+$defaultConfig = array (
+	'results_per_page' => 50,
+	'search_page' => 'inc.search.php',
+	'crud_page' => 'crud.php',
+	'project_name' => 'project'
+);
+
 if (isset($_POST['scaffold_info'])) {
-	$project['project_name'] = stripslashes($_POST['project_name']);
-	$project['list_page']    = stripslashes($_POST['list_page']);
-	$project['crud_page']    = stripslashes($_POST['crud_page']);
-	$project['search_page']  = stripslashes($_POST['search_page']);
-	$project['tables']       = array();
+	$project['project_name'] 	 = stripslashes($_POST['project_name']);
+	$project['list_page']    	 = stripslashes($_POST['list_page']);
+	$project['crud_page']    	 = stripslashes($_POST['crud_page']);
+	$project['search_page']  	 = stripslashes($_POST['search_page']);
+	$project['results_per_page'] = intval($_POST['results_per_page']);
+	
+	if ($project['results_per_page'] < 1)
+		$project['results_per_page'] = $defaultConfig['results_per_page'];
+	
+	$project['tables']           = array();
 
 	$tables = explode('CREATE ', $_POST['sql']);
 	foreach($tables as $sql_data) {
@@ -110,17 +122,21 @@ href="javascript:show_hint()">[Hint]</a></p>
 
 <p><textarea id="sql" name="sql" cols="55" rows="10"><?= (isset($_REQUEST['sql']) ? stripslashes($_REQUEST['sql']) : '') ?></textarea></p>
 
-<? $val = (isset($_REQUEST['project_name']) ? stripslashes($_REQUEST['project_name']) : 'project'); ?>
+<? $val = (isset($_REQUEST['project_name']) ? stripslashes($_REQUEST['project_name']) : $defaultConfig['project_name']); ?>
 <p><label>Project folder name</label>
   <input name="project_name" type="text" id="project_name" value="<?= $val ?>" /></p>
 
-<? $val = (isset($_REQUEST['crud_page']) ? stripslashes($_REQUEST['crud_page']) : 'crud.php'); ?>
+<? $val = (isset($_REQUEST['crud_page']) ? stripslashes($_REQUEST['crud_page']) : $defaultConfig['crud_page']); ?>
 <p><label>CRUD file name</label>
   <input type="text" name="crud_page" value="<?= $val ?>" id="crud_page" /></p>
 
-<? $val = (isset($_REQUEST['search_page']) ? stripslashes($_REQUEST['search_page']) : 'inc.search.php'); ?>
+<? $val = (isset($_REQUEST['search_page']) ? stripslashes($_REQUEST['search_page']) : $defaultConfig['search_page']); ?>
 <p><label>Search file name</label>
   <input type="text" name="search_page" value="<?= $val ?>" id="search_page" /></p>
+
+<? $val = (isset($_REQUEST['results_per_page']) ? stripslashes($_REQUEST['results_per_page']) : $defaultConfig['results_per_page']); ?>
+<p><label>Results per page</label>
+  <input type="text" name="results_per_page" value="<?= $val ?>" id="results_per_page" /></p>
 
 <p><input type="hidden" name="id_key" id="id_key" value="id" />
   <input type="hidden" name="list_page" id="list_page" value="index.php" />

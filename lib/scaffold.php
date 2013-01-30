@@ -11,6 +11,7 @@ class Scaffold {
 		$this->table   = $table_name;
 		$this->id_key  = $table_info['id_key'];
 		$this->columns = $columns;
+		$this->resultsPerPage = $project['results_per_page'];
 	}
 
 	function list_page() {
@@ -28,7 +29,7 @@ include('{$this->project['search_page']}');
 
 /* Default paging criteria (may be overriden by paging functions) */
 \$start     = 0;
-\$per_page  = 50;
+\$per_page  = {$this->resultsPerPage};
 \$count_sql = 'SELECT COUNT({$this->id_key}) AS tot FROM `{$this->table}` WHERE ' . \$conds;
 include('../inc.paging.php');
 

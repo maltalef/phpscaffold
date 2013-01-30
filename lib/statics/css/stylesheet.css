@@ -30,12 +30,13 @@ small {
 }
 li {
   list-style-type: none;
+  padding: 4px;
 }
 label span {
   display: block;
   float: left;
   text-decoration: none;
-  width: 9em;
+  width: 14em;
 }
 input.uppercase {
   text-transform: uppercase;
@@ -104,4 +105,8 @@ td.specalt {
   background: #f5fafa url(../images/bullet2.gif) no-repeat;
   font: bold 12px Verdana, Arial, Helvetica, sans-serif;
   color: #000;
+}
+
+fieldset li:nth-child(even) {
+	background-color: rgba(0, 0, 0, 0.075);
 }
