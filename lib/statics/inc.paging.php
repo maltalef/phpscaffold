@@ -42,8 +42,9 @@ if ($num_pages <= 25) {
 	}
 }
 echo ($page+1 <= $num_pages ? '<a href="?'.$pars.'&amp;page='.($page+1).'">Next</a>' : 'Next');
+$startPlusOne = $start + 1;
 echo "</p>
 
-<p>(Showing entries $start to "
+<p>(Showing entries $startPlusOne to "
   . min($start+$per_page, $num_results) . " out of $num_results.)</p></div>\n\n";
 ?>

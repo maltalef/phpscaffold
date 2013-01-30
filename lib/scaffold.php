@@ -50,15 +50,20 @@ while(\$row = mysql_fetch_array(\$r)) {\n";
 
 		foreach($this->columns as $v) {
 			if($v['tipo']['blob'])
-				$val = "limit_chars(nl2br(\$row['".$v['nombre']."']))";
+				$val = "limit_chars(\$row['".$v['nombre']."'])";
 			elseif($v['tipo']['date'] or $v['tipo']['datetime'])
 				$val = "humanize(\$row['".$v['nombre']."'])";
 			elseif($v['tipo']['bool'])
 				$val = "(\$row['".$v['nombre']."'] ? 'Yes' : 'No')";
 			else
 				$val = "\$row['".$v['nombre']."']";
+				
+			$val = "htmlentities($val, ENT_COMPAT | ENT_HTML401, 'UTF-8')";
+			
+			if ($v['tipo']['blob'])
+				$val = "nl2br($val)";
 
-			$return_string .= "    <td>' . " . ($v['tipo']['bool'] ? "$val" : "htmlentities($val)") . " . '</td>\n";
+			$return_string .= "    <td>' . " . $val . " . '</td>\n";
 		}
 		$return_string .= "    <td><a href=\"{$this->project['crud_page']}?{$this->id_key}=' . \$row['{$this->id_key}'] . '\">Edit</a></td>
     <td><a href=\"{$this->project['crud_page']}?delete=1&amp;{$this->id_key}=' . \$row['{$this->id_key}'] . '\" onclick=\"return confirm(\'Are you sure?\')\">Delete</a></td>
@@ -92,8 +97,9 @@ include('../inc.functions.php');\n\n";
 		$column_array = array();
 
 		$return_string .= "if (isset(\$_POST['submitted'])) {
-	foreach(\$_POST AS \$key => \$value) { \$_POST[\$key] = mysql_real_escape_string(\$value); }\n";
-		$insert = "REPLACE INTO `{$this->table}` (";
+			\$values = array();
+			foreach(\$_POST AS \$key => \$value) { \$values[\$key] = mysql_real_escape_string(\$value); }\n";
+		$insert = "INSERT INTO `{$this->table}` (";
 		$counter = 0;
 		foreach($this->columns as $v) {
 			$insert .= "`$v[nombre]`" ;
@@ -108,13 +114,28 @@ include('../inc.functions.php');\n\n";
 			if ($v['nombre'] != $this->id_key) {
 				$field = $v['nombre'];
 				$val = $this->_parse($field, $v['tipo']);
-				$insert .= "'$val'";
+				
+				if ($v['tipo']['date'] || $v['tipo']['datetime'])
+					$insert .= '\'".'.$val.'."\'';
+				else
+					$insert .= '".'."(strlen($val) > 0 ? \"'\".$val.\"'\" : \"DEFAULT(`$field`)\")".'."';
+					
 				if ($counter < count($this->columns) - 2)
 					$insert .= ", ";
 				$counter++;
 			}
 		}
-		$insert .= ');';
+		$insert .= ') ON DUPLICATE KEY UPDATE ';
+		
+		$counter = 0;
+		foreach($this->columns as $v) {
+			$insert .= "`$v[nombre]` = VALUES(`$v[nombre]`)" ;
+			if ($counter < count($this->columns) - 1)
+				$insert .= ", ";
+			$counter++;
+		}
+		
+		$insert .= ';';
 
 		$return_string .= "	\$sql = \"$insert\";
 	mysql_query(\$sql) or die(mysql_error());
@@ -197,17 +218,18 @@ foreach ($opts as $o) {
 		/* Takes value either from $_GET['id'] or from $row['id'] */
 		$val = '$'.$value.'[\''.$col['nombre'].'\']';
 		$isset_val = '(isset('.$val.') ? stripslashes('.$val.') : \'\')';
+		$htmlentities_val = "htmlentities($isset_val, ENT_COMPAT | ENT_HTML401, 'UTF-8')";
 
 		if ($col['tipo']['bool'])
-			$text .= '<input type="checkbox" name="'.$col['nombre'].'" value="1" <?= (isset('.$val.') && '.$val.' ? \'checked="checked"\' : \'\') ?> />';
+			$text .= '<input type="hidden" name="'.$col['nombre'].'" value="0"/><input type="checkbox" name="'.$col['nombre'].'" value="1" <?= (isset('.$val.') && '.$val.' ? \'checked="checked"\' : \'\') ?> />';
 		elseif ($col['tipo']['date'])
 			$text .= '<?= input_date(\''.$col['nombre'].'\', ' . $isset_val . ') ?>';
 		elseif ($col['tipo']['datetime'])
 			$text .= '<?= input_datetime(\''.$col['nombre'].'\', ' . $isset_val . ') ?>';
 		elseif ($col['tipo']['blob'])
-			$text .= '<textarea name="'.$col['nombre'].'" cols="40" rows="10"><?= ' . $isset_val . ' ?></textarea>';
+			$text .= '<textarea name="'.$col['nombre'].'" cols="40" rows="10"><?= '.$htmlentities_val.' ?></textarea>';
 		else
-			$text .= '<input type="text" name="'.$col['nombre'].'" value="<?= (isset('.$val.') ? stripslashes('.$val.') : \'\') ?>" />';
+			$text .= '<input type="text" name="'.$col['nombre'].'" value="<?= '.$htmlentities_val.' ?>" />';
 
 		if (!$is_search) $text .= '</label>'; /* Could be closed after search_options */
 		return $text . "</li>\n";
@@ -220,7 +242,7 @@ foreach ($opts as $o) {
 			$day  = $field . '_day';
 			$mth  = $field . '_mth';
 			$year = $field . '_year';
-			$val = "\$_POST[$year]-\$_POST[$mth]-\$_POST[$day]";
+			$val = "\$values['$year']-\$values['$mth']-\$values['$day']";
 		} elseif ($type['datetime']) {
 			$seg  = $field . '_seg';
 			$min  = $field . '_min';
@@ -228,9 +250,9 @@ foreach ($opts as $o) {
 			$day  = $field . '_day';
 			$mth  = $field . '_mth';
 			$year = $field . '_year';
-			$val = "\$_POST[$year]-\$_POST[$mth]-\$_POST[$day] \$_POST[$hour]:\$_POST[$min]:\$_POST[$seg]";
+			$val = "\$values['$year'].'-'.\$values['$mth'].'-'.\$values['$day'].' '.\$values['$hour'].':'.\$values['$min'].':'.\$values['$seg']";
 		} else {
-			$val = "\$_POST[$field]";
+			$val = "\$values['$field']";
 		}
 		return $val;
 	}
