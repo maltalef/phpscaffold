@@ -155,11 +155,11 @@ function limit_chars($str, $lim = 150) {
  *  List and link all crud directories
  */
 function list_cruds() {
-	$filter = array('.', '..', 'css', 'lib');
+	$filter = array('css', 'lib', 'js');
 	echo '<ul>';
 	if ($handle = opendir('..')) {
 		while (false !== ($file = readdir($handle))) {
-			if (is_dir("../$file") && !in_array($file, $filter))
+			if (is_dir("../$file") && !in_array($file, $filter) && substr($file, 0, 1) != '.')
 				echo "  <li><a href=\"../$file/\">" . titleize($file) . "</a></li>\n";
 		}
 		closedir($handle);
