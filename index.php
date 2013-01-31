@@ -1,7 +1,8 @@
 <?php
 error_reporting(E_ALL);
-include 'lib/scaffold.php';
-include 'lib/functions.inc';
+
+require_once 'lib/scaffold.php';
+require_once 'lib/functions.inc';
 
 $did_scaffold = false;
 
@@ -17,12 +18,24 @@ if (isset($_POST['scaffold_info'])) {
 	$project['list_page']    	 = stripslashes($_POST['list_page']);
 	$project['crud_page']    	 = stripslashes($_POST['crud_page']);
 	$project['search_page']  	 = stripslashes($_POST['search_page']);
+	$project['relationships']    = $_POST['relationships'];
 	$project['results_per_page'] = intval($_POST['results_per_page']);
+	
+	foreach ($project['relationships'] as $type => &$relationships) {
+		$toUnset = array();
+		foreach ($relationships as $i => &$relationship) {
+			if (empty($relationship['A']['table']) || empty($relationship['B']['table']))
+				$toUnset[] = $i;
+		}
+		
+		for ($i = count($toUnset) - 1; $i >= 0; $i--)
+			unset($relationships[$toUnset[$i]]);
+	}
 	
 	if ($project['results_per_page'] < 1)
 		$project['results_per_page'] = $defaultConfig['results_per_page'];
 	
-	$project['tables']           = array();
+	$project['tables'] = array();
 
 	$tables = explode('CREATE ', $_POST['sql']);
 	foreach($tables as $sql_data) {
@@ -48,6 +61,7 @@ if (isset($_POST['scaffold_info'])) {
 						'blob' => (stripos($line, 'TEXT') || stripos($line, 'BLOB')),
 						'date' => $date,
 						'datetime' => $datetime,
+						'fk' => is_fk($table_name, $col, $project)
 					);
 				}
 			}
@@ -57,6 +71,7 @@ if (isset($_POST['scaffold_info'])) {
 	} // foreach table
 
 	if ($did_scaffold) {
+		
 		/* Create directory layout if not exists */
 		$dir = "tmp/{$project['project_name']}/";
 		$statics = 'lib/statics/';
@@ -138,6 +153,74 @@ href="javascript:show_hint()">[Hint]</a></p>
 <p><label>Results per page</label>
   <input type="text" name="results_per_page" value="<?= $val ?>" id="results_per_page" /></p>
 
+<h3>one to many relationships</h3>
+
+<?php $oneToManies = empty($_POST['relationships']['oneToMany']) ? array(false) : $_POST['relationships']['oneToMany']; ?>
+<?php foreach ($oneToManies as $oneToMany) { ?>
+<div class="oneToMany">
+	<div>
+		<?php $val = empty($oneToMany['A']['table']) ? '' : $oneToMany['A']['table']; ?>
+		<input type="text" name="relationships[oneToMany][i][A][table]" placeholder="table A" value="<?=$val?>" />
+		<?php $val = empty($oneToMany['A']['table']) ? '' : $oneToMany['A']['nameField']; ?>
+		<input type="text" name="relationships[oneToMany][i][A][nameField]" placeholder="table A's name field" value="<?=$val?>" />
+		<?php $val = empty($oneToMany['A']['table']) ? '' : $oneToMany['A']['PK']; ?>
+		<input type="text" name="relationships[oneToMany][i][A][PK]" placeholder="table A's PK" value="<?=$val?>" />
+	</div>
+	<div>
+		<?php $val = empty($oneToMany['B']['table']) ? '' : $oneToMany['B']['table']; ?>
+		<input type="text" name="relationships[oneToMany][i][B][table]" placeholder="table B" value="<?=$val?>" />
+		<?php $val = empty($oneToMany['B']['nameField']) ? '' : $oneToMany['B']['nameField']; ?>
+		<input type="text" name="relationships[oneToMany][i][B][nameField]" placeholder="table B's name field" value="<?=$val?>" />
+		<?php $val = empty($oneToMany['B']['PK']) ? '' : $oneToMany['B']['PK']; ?>
+		<input type="text" name="relationships[oneToMany][i][B][PK]" placeholder="table B's PK" value="<?=$val?>" />
+	</div>
+	<div class="oneColumn">
+		<?php $val = empty($oneToMany['B']['FK']) ? '' : $oneToMany['B']['FK']; ?>
+		<input type="text" name="relationships[oneToMany][i][B][FK]" placeholder="table B's FK to A" value="<?=$val?>" />
+	</div>
+	
+	<a href="javascript:void(0)" class="remove button">REMOVE</a>
+</div>
+<?php } // foreach ?>
+
+<a href="javascript:void(0)" class="add oneToMany button">ADD</a>
+
+<h3>many to many relationships</h3>
+
+<?php $manyToManies = empty($_POST['relationships']['manyToMany']) ? array(false) : $_POST['relationships']['manyToMany']; ?>
+<?php foreach ($manyToManies as $manyToMany) { ?>
+<div class="manyToMany">
+	<div>
+		<?php $val = empty($manyToMany['A']['table']) ? '' : $manyToMany['A']['table']; ?>
+		<input type="text" name="relationships[manyToMany][i][A][table]" placeholder="table A" value="<?=$val?>" />
+		<?php $val = empty($manyToMany['A']['nameField']) ? '' : $manyToMany['A']['nameField']; ?>
+		<input type="text" name="relationships[manyToMany][i][A][nameField]" placeholder="table A's name field" value="<?=$val?>" />
+		<?php $val = empty($manyToMany['A']['PK']) ? '' : $manyToMany['A']['PK']; ?>
+		<input type="text" name="relationships[manyToMany][i][A][PK]" placeholder="table A's PK" value="<?=$val?>" />
+	</div>
+	<div>
+		<?php $val = empty($manyToMany['B']['table']) ? '' : $manyToMany['B']['table']; ?>
+		<input type="text" name="relationships[manyToMany][i][B][table]" placeholder="table B" value="<?=$val?>" />
+		<?php $val = empty($manyToMany['B']['nameField']) ? '' : $manyToMany['B']['nameField']; ?>
+		<input type="text" name="relationships[manyToMany][i][B][nameField]" placeholder="table B's name field" value="<?=$val?>" />
+		<?php $val = empty($manyToMany['B']['PK']) ? '' : $manyToMany['B']['PK']; ?>
+		<input type="text" name="relationships[manyToMany][i][B][PK]" placeholder="table B's PK" value="<?=$val?>" />
+	</div>
+	<div>
+		<?php $val = empty($manyToMany['intermediate']['table']) ? '' : $manyToMany['intermediate']['table']; ?>
+		<input type="text" name="relationships[manyToMany][i][intermediate][table]" placeholder="intermediate table" value="<?=$val?>" />
+		<?php $val = empty($manyToMany['intermediate']['FKA']) ? '' : $manyToMany['intermediate']['FKA']; ?>
+		<input type="text" name="relationships[manyToMany][i][intermediate][FKA]" placeholder="FK to A" value="<?=$val?>" />
+		<?php $val = empty($manyToMany['intermediate']['FKB']) ? '' : $manyToMany['intermediate']['FKB']; ?>
+		<input type="text" name="relationships[manyToMany][i][intermediate][FKB]" placeholder="FK to B" value="<?=$val?>" />
+	</div>
+	
+	<a href="javascript:void(0)" class="remove button">REMOVE</a>
+</div>
+<?php } // foreach ?>
+
+<a href="javascript:void(0)" class="add manyToMany button">ADD</a>
+
 <p><input type="hidden" name="id_key" id="id_key" value="id" />
   <input type="hidden" name="list_page" id="list_page" value="index.php" />
   <input name="scaffold_info" type="hidden" value="1" />
@@ -151,6 +234,5 @@ if ($did_scaffold) {
 }
 ?>
 </div>
-
 </body>
 </html>

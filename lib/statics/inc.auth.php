@@ -1,5 +1,5 @@
 <?php
-include 'inc.functions.php';
+require_once 'inc.functions.php';
 $msg = (isset($_GET['msg']) ? $_GET['msg'] : '');
 
 if (isset($_POST['user']) && isset($_POST['pass'])) {

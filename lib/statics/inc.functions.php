@@ -1,7 +1,7 @@
 <?php
 /* phpscaffold code - you may leave this untouched */
-include 'inc.config.php';
-include 'inc.layout.php';
+require_once 'inc.config.php';
+require_once 'inc.layout.php';
 
 session_start();
 unauthorize_if_not_logged_in();

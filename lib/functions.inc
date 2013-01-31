@@ -59,3 +59,22 @@ function pr($arr) {
 	print_r($arr);
 	echo '</pre>';
 }
+
+/* looks for the column inside the relationships array (looks for FKs only) */
+function is_fk ($table, $column, $project) {
+	foreach ($project['relationships'] as $type => $relationships) {
+		foreach ($relationships as $relationship) {
+			if ($type == 'oneToMany') {
+				if ($relationship['B']['table'] == $table && $relationship['B']['FK'] == $column)
+					return true;
+			} elseif ($type == 'manyToMany') {
+				if ($relationship['intermediate']['table'] == $table &&
+					($relationship['intermediate']['FKA'] == $column ||
+					 $relationship['intermediate']['FKB'] == $column))
+					return true;
+			}
+		}
+	}
+	
+	return false;
+}

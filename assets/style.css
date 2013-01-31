@@ -70,3 +70,29 @@ label {
   float: left;
   width: 130px;
 }
+
+div.oneToMany, div.manyToMany {
+	position: relative;
+	margin-top: 8px;
+}
+
+a.remove {
+	position: absolute;
+	top: 25px;
+	left: 480px;
+}
+
+a.add {
+	display: block;
+	margin-top: 10px;
+}
+
+a.button, a.button:visited {
+	font-weight: bold;
+	text-decoration: none;
+	color: darkblue;
+}
+
+#create_crud div.oneColumn input[type='text'] {
+	width: 466px;
+}
