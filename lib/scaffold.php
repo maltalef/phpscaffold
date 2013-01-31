@@ -207,7 +207,7 @@ require_once('../inc.functions.php');\n\n";
 
 ";
 		
-		// query relationship tables to fill selects
+		// query relationship tables to fill comboboxes
 		
 		$return_string .= "\$actualPk = \$id;\n";
 		$return_string .= "\$relationships = array();\n";
@@ -464,6 +464,7 @@ foreach ($opts as $o) {
 					}
 				
 				} elseif ($type == 'manyToMany') {
+			                                        
 			
 					// swap tables so we are table A
 					if ($relationship['B']['table'] == $this->table) {
@@ -474,6 +475,13 @@ foreach ($opts as $o) {
 						$aux = $relationship['intermediate']['FKA'];
 						$relationship['intermediate']['FKA'] = $relationship['intermediate']['FKB'];
 						$relationship['intermediate']['FKB'] = $aux;
+						
+						$tableNameA = $relationship['A']['table'];
+						$nameFieldA = $relationship['A']['nameField'];
+						$pkA		= $relationship['A']['PK'];
+						$tableNameB = $relationship['B']['table'];
+						$nameFieldB = $relationship['B']['nameField'];
+						$pkB		= $relationship['B']['PK'];
 					}
 		
 					if ($relationship['A']['table'] == $this->table) {
